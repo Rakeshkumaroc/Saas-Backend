@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const userStructure = new mongoose.Schema(
+const adminSchema = new mongoose.Schema(
   {
-    email: { type: String, trim: true, required: true }, //unique:true
+    email: { type: String, trim: true, required: true }, 
     phone: { type: String, trim: true, required: true },
     password: { type: String, trim: true, required: true },
     //
@@ -10,4 +10,4 @@ const userStructure = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("userCollection", userStructure);
+module.exports = mongoose.model("adminCollection", adminSchema);

@@ -1,19 +1,24 @@
-const User = require("../models/user.model");
+const adminModel = require("../models/admin.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+// ======================= SIGNUP =========================
 const signUp = async (req, res, next) => {
   try {
-    // console.log(req.body.aboutMe)
     const { email, phone, password } = req.body;
+
+    // Validate input
+
     if (!email || !phone || !password) {
-      return next(new ApiError("missing filed", 500));
+      return next(new ApiError("missing filed", 400));
     }
 
-    const isUserExits = await User.findOne({
+    // Check if user already exists
+
+    const isUserExits = await adminModel.findOne({
       $or: [{ email: email }, { phone: phone }],
     });
 
@@ -27,33 +32,52 @@ const signUp = async (req, res, next) => {
         )
       );
     }
-    const hashPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    // Hash password
+    const saltRounds = Number(process.env.SALT_ROUNDS || 10);
+    const hashPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create and save new user
+    const newUser = new adminModel({
       email: email,
       phone: phone,
       password: hashPassword,
     });
 
-    const saveData = await newUser.save();
-    // console.log(saveData);
+    const savedUser = await newUser.save();
+
+    // Remove password from response
+    const userResponse = {
+      _id: savedUser._id,
+      email: savedUser.email,
+      phone: savedUser.phone,
+    };
+
     res
       .status(200)
-      .json(new ApiResponse(200, "register successfully complete", saveData));
+      .json(
+        new ApiResponse(200, "register successfully complete", userResponse)
+      );
   } catch (error) {
     next(error);
   }
 };
+
+// ======================= LOGIN =========================
 
 const login = async (req, res, next) => {
   try {
     const { email, phone, password } = req.body;
 
     if (!email || !phone || !password) {
-      return next(new ApiError("Missing fields", 400));
+      return next(new ApiError("Email/Phone and Password are required", 400));
     }
 
-    const isUserExit = await User.findOne({ email, phone });
+    // Allow login via email or phone
+    const isUserExit = await adminModel.findOne({
+      $or: [{ email }, { phone }],
+    });
+
     if (!isUserExit) {
       return next(new ApiError("User not found", 404));
     }
@@ -65,7 +89,7 @@ const login = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        userId: isUserExit._id,
+        adminId: isUserExit._id,
         email: isUserExit.email,
         phone: isUserExit.phone,
       },
@@ -95,4 +119,14 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, login };
+// ======================= LOGOUT =========================
+const logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  return res.status(200).json(new ApiResponse(200, "Logout successful", null));
+};
+
+module.exports = { signUp, login, logout };

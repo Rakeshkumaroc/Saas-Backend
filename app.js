@@ -3,7 +3,8 @@ const dbConnect = require("./db/db");
 const app = express();
 const errorHandler = require("./middleware/errorHandler");
 const cors = require("cors");
-const userRouter = require("./routes/user.routes");
+const userRoutes = require("./routes/admin.routes");
+const orgRoutes = require("./routes/org.routes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -24,9 +25,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 5️ User routes
-app.use("/api/v1/user", userRouter);
-
+// 5️  routes mounting
+app.use("/api/v1/user", userRoutes);
+app.use('/api/v1/org', orgRoutes);
 // 6️ Global error handler (should be last)
 app.use(errorHandler);
 

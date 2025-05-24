@@ -1,28 +1,26 @@
 const ApiError = require("../utils/ApiError");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-
+const adminModel = require("../models/admin.model");
 // token validator middleware
 
 const tokenChecker = async (req, res, next) => {
   try {
-    //console.log(req.headers.authorization.split(" ")[1]);
-    if (!req.headers.authorization) {
-      return next(new ApiError("token nhi hai", 500));
-    }
+    const token = req.cookies.token;
 
-    // token sath me laya hai user to hm check krenge mere hi app se bnaya gya user hai
-    const tokenVerify = await jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      process.env.JWT_SECRET_KEY
-    );
-    // console.log(tokenVerify);
-    const userExits = await User.findOne({ _id: tokenVerify.userId });
+    if (!token) {
+      return next(new ApiError("Token not found in cookies", 401));
+    }
+    // Verify token
+    const tokenVerify = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    // Check if user exists
+    const userExits = await adminModel.findOne({ _id: tokenVerify.userId });
 
     if (!userExits) {
-      return next(new ApiError("you are not valid user", 500));
+      return next(new ApiError("you are not valid user", 401));
     }
-    //  console.log(userExits)
+    // Attach token data to req for later use
     req.tokenData = tokenVerify;
 
     next();
