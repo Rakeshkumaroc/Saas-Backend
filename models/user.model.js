@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const adminSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     email: { type: String, trim: true, required: true }, 
     phone: { type: String, trim: true, required: true },
@@ -10,4 +10,4 @@ const adminSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("adminCollection", adminSchema);
+module.exports = mongoose.model("userCollection", userSchema);

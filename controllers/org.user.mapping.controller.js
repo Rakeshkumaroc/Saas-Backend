@@ -1,4 +1,4 @@
-const OrgUserMapping = require("../models/🔹 org.user.mapping");
+const OrgUserMapping = require("../models/org.user.mapping.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 

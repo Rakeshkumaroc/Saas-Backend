@@ -4,7 +4,7 @@ const {
   createMapping,
   getMappingsByOrg,
   deleteMapping,
-} = require("../controllers/🔹 org.user.m.controller");
+} = require("../controllers/org.user.mapping.controller");
 
 router.post("/create-mapping", createMapping);
 router.get("/org/:orgId", getMappingsByOrg);

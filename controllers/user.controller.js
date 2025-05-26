@@ -1,4 +1,4 @@
-const adminModel = require("../models/admin.model");
+const userModel = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const bcrypt = require("bcrypt");
@@ -18,7 +18,7 @@ const signUp = async (req, res, next) => {
 
     // Check if user already exists
 
-    const isUserExits = await adminModel.findOne({
+    const isUserExits = await userModel.findOne({
       $or: [{ email: email }, { phone: phone }],
     });
 
@@ -38,7 +38,7 @@ const signUp = async (req, res, next) => {
     const hashPassword = await bcrypt.hash(password, saltRounds);
 
     // Create and save new user
-    const newUser = new adminModel({
+    const newUser = new userModel({
       email: email,
       phone: phone,
       password: hashPassword,
@@ -74,7 +74,7 @@ const login = async (req, res, next) => {
     }
 
     // Allow login via email or phone
-    const isUserExit = await adminModel.findOne({
+    const isUserExit = await userModel.findOne({
       $or: [{ email }, { phone }],
     });
 
@@ -89,7 +89,7 @@ const login = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        adminId: isUserExit._id,
+        userId: isUserExit._id,
         email: isUserExit.email,
         phone: isUserExit.phone,
       },
@@ -128,9 +128,5 @@ const logout = (req, res) => {
   });
   return res.status(200).json(new ApiResponse(200, "Logout successful", null));
 };
-
-
-
-
 
 module.exports = { signUp, login, logout };
