@@ -1,20 +1,36 @@
-// models/OrganizationType.js
 const mongoose = require("mongoose");
 
-const orgTypeSchema = new mongoose.Schema({
-  orgTypeId: {
+const branchSchema = new mongoose.Schema({
+  branchId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    unique: true, // Primary Key
+    unique: true,
     index: true,
   },
-  orgTypeName: {
+  branchName: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  address: {
+    type: String,
+    default: "",
+  },
+  city: {
     type: String,
     required: true,
   },
-  description: {
+  state: {
     type: String,
-    default: "",
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
+  zipCode: {
+    type: String,
+    required: true,
   },
   isActive: {
     type: Boolean,
@@ -31,7 +47,7 @@ const orgTypeSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now,
-  },
+  }, 
 });
 
-module.exports = mongoose.model("orgTypeCollection", orgTypeSchema);
+module.exports = mongoose.model("branchCollection", branchSchema);

@@ -5,7 +5,9 @@ const errorHandler = require("./middleware/errorHandler");
 const cors = require("cors");
 const userRoutes = require("./routes/user.routes");
 const orgRoutes = require("./routes/org.routes");
-const orgMappingToUser = require("./routes/org.user.mapping.routes");
+const orgTypeRoutes = require("./routes/org.type.routes");
+const orgMappingToUsers = require("./routes/org.user.mapping.routes");
+const branchRoutes = require('./routes/branch.routes');
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -29,7 +31,9 @@ app.use(express.urlencoded({ extended: true }));
 // 5️  routes mounting
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/org", orgRoutes);
-app.use("/api/v1/org-mapping-to-user", orgMappingToUser);
+app.use("/api/v1/org-mapping-to-user", orgMappingToUsers);
+app.use("/api/v1/org-type", orgTypeRoutes);
+app.use('/api/v1/branch', branchRoutes);
 // 6️ Global error handler (should be last)
 app.use(errorHandler);
 

@@ -129,4 +129,87 @@ const logout = (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Logout successful", null));
 };
 
-module.exports = { signUp, login, logout };
+// ======================= GET ALL USERS =========================
+const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await userModel.find({ isDeleted: false }).select("-password");
+    res.status(200).json(new ApiResponse(200, "All users fetched", users));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ======================= GET USER BY ID =========================
+const getUserById = async (req, res, next) => {
+  try {
+    const user = await userModel.findById(req.params.userId).select("-password");
+
+    if (!user || user.isDeleted) {
+      return next(new ApiError("User not found", 404));
+    }
+
+    res.status(200).json(new ApiResponse(200, "User fetched", user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ======================= UPDATE USER =========================
+// const updateUser = async (req, res, next) => {
+//   try {
+//     const { email, phone, password } = req.body;
+//     const user = await userModel.findById(req.params.userId);
+
+//     if (!user || user.isDeleted) {
+//       return next(new ApiError("User not found", 404));
+//     }
+
+//     if (email) user.email = email;
+//     if (phone) user.phone = phone;
+//     if (password) {
+//       const salt = await bcrypt.genSalt(Number(process.env.SALT_ROUNDS || 10));
+//       user.password = await bcrypt.hash(password, salt);
+//     }
+//     user.updatedAt = new Date();
+
+//     const updatedUser = await user.save();
+//     const userResponse = {
+//       _id: updatedUser._id,
+//       email: updatedUser.email,
+//       phone: updatedUser.phone,
+//     };
+
+//     res.status(200).json(new ApiResponse(200, "User updated", userResponse));
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// ======================= DELETE USER (Soft Delete) =========================
+const deleteUser = async (req, res, next) => {
+  try {
+    const user = await userModel.findById(req.params.userId);
+
+    if (!user || user.isDeleted) {
+      return next(new ApiError("User not found", 404));
+    }
+
+    user.isDeleted = true;
+    user.updatedAt = new Date();
+
+    await user.save();
+    res.status(200).json(new ApiResponse(200, "User deleted", null));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  signUp,
+  login,
+  logout,
+  getAllUsers,
+  getUserById,
+  // updateUser,
+  deleteUser,
+};
