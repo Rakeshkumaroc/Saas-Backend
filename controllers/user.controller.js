@@ -67,15 +67,15 @@ const signUp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, phone, password } = req.body;
+    const { contact, password } = req.body;
 
-    if (!email || !phone || !password) {
+    if (!contact || !password) {
       return next(new ApiError("Email/Phone and Password are required", 400));
     }
 
     // Allow login via email or phone
     const isUserExit = await userModel.findOne({
-      $or: [{ email }, { phone }],
+      $or: [{ email:contact }, { phone:contact }],
     });
 
     if (!isUserExit) {
