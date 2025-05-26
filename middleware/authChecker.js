@@ -1,7 +1,7 @@
 const ApiError = require("../utils/ApiError");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const adminModel = require("../models/admin.model");
+const userModel = require("../models/user.model");
 // token validator middleware
 
 const tokenChecker = async (req, res, next) => {
@@ -15,7 +15,7 @@ const tokenChecker = async (req, res, next) => {
     const tokenVerify = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     // Check if user exists
-    const userExits = await adminModel.findOne({ _id: tokenVerify.userId });
+    const userExits = await userModel.findOne({ _id: tokenVerify.userId });
 
     if (!userExits) {
       return next(new ApiError("you are not valid user", 401));
