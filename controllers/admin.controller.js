@@ -8,27 +8,25 @@ require("dotenv").config();
 // ======================= SIGNUP =========================
 const signUp = async (req, res, next) => {
   try {
-    const { email, phone, password } = req.body;
+    const { userName, email, phone, password } = req.body;
 
     // Validate input
-
-    if (!email || !phone || !password) {
-      return next(new ApiError("missing filed", 400));
+    if (!userName || !email || !phone || !password) {
+      return next(new ApiError("All fields are required", 400));
     }
 
     // Check if user already exists
-
     const isUserExits = await adminModel.findOne({
-      $or: [{ email: email }, { phone: phone }],
+      $or: [{ email }, { phone }],
     });
 
     if (isUserExits) {
       return next(
         new ApiError(
-          isUserExits.email == email
-            ? "email already exits ."
-            : "phone already exits .",
-          500
+          isUserExits.email === email
+            ? "Email already exists"
+            : "Phone already exists",
+          400 // Use 400 for client errors
         )
       );
     }
@@ -39,8 +37,9 @@ const signUp = async (req, res, next) => {
 
     // Create and save new user
     const newUser = new adminModel({
-      email: email,
-      phone: phone,
+      userName, // Add userName
+      email,
+      phone,
       password: hashPassword,
     });
 
@@ -49,6 +48,7 @@ const signUp = async (req, res, next) => {
     // Remove password from response
     const userResponse = {
       _id: savedUser._id,
+      userName: savedUser.userName,
       email: savedUser.email,
       phone: savedUser.phone,
     };
@@ -56,10 +56,11 @@ const signUp = async (req, res, next) => {
     res
       .status(200)
       .json(
-        new ApiResponse(200, "register successfully complete", userResponse)
+        new ApiResponse(200, "Register successfully completed", userResponse)
       );
   } catch (error) {
-    next(error);
+    console.error(error); // Log error for debugging
+    next(new ApiError(error.message || "Server error", 500));
   }
 };
 
@@ -67,15 +68,15 @@ const signUp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, phone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !phone || !password) {
-      return next(new ApiError("Email/Phone and Password are required", 400));
+    if (!password || (!email)) {
+      return next(new ApiError("Password and either Email  are required", 400));
     }
 
-    // Allow login via email or phone
+    // Allow login via email  
     const isUserExit = await adminModel.findOne({
-      $or: [{ email }, { phone }],
+      $or: [{ email: email || "" }],
     });
 
     if (!isUserExit) {
@@ -84,38 +85,36 @@ const login = async (req, res, next) => {
 
     const verifyPassword = await bcrypt.compare(password, isUserExit.password);
     if (!verifyPassword) {
-      return next(new ApiError("Password is invalid", 401));
+      return next(new ApiError("Invalid password", 401));
     }
 
     const token = jwt.sign(
       {
         adminId: isUserExit._id,
-        email: isUserExit.email,
-        phone: isUserExit.phone,
+        email: isUserExit.email, 
       },
       process.env.JWT_SECRET_KEY,
       { expiresIn: "1d" }
     );
 
-    // 🍪 Set token as HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true on live server (HTTPS)
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // Optional response data
     const responseData = {
-      email: isUserExit.email,
-      phone: isUserExit.phone,
+      id: isUserExit._id, 
+      username: isUserExit.userName, 
     };
 
     res
       .status(200)
       .json(new ApiResponse(200, "Login successful", responseData));
   } catch (error) {
-    next(error);
+    console.error(error); // Log error for debugging
+    next(new ApiError(error.message || "Server error", 500));
   }
 };
 
