@@ -6,6 +6,7 @@ const OrgUserMapping = require("../models/org.user.mapping.model");
 // Create new OrgModel
 const createOrg = async (req, res, next) => {
   try {
+    console.log(req.body)
     const {
       orgName,
       email,
@@ -25,7 +26,7 @@ const createOrg = async (req, res, next) => {
     const existingOrg = await OrgModel.findOne({
       $or: [{ email }, { phone }],
     });
-
+console.log("comingi 1")
     if (existingOrg) {
       return next(
         new ApiError(
@@ -45,9 +46,11 @@ const createOrg = async (req, res, next) => {
       branchCount,
       isMultiBranch,
     });
+    console.log("comingi 2")
 
     const savedOrg = await newOrg.save();
-
+    console.log("comingi 3")
+console.log(savedOrg)
     const orgTypeMapping = new OrgTypeMapping({
       orgId: savedOrg._id,
       orgTypeId,

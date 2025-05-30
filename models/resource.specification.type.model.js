@@ -5,7 +5,6 @@ const resourceSpecificationTypeSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    index: true,
   },
   isActive: {
     type: Boolean,
@@ -25,4 +24,7 @@ const resourceSpecificationTypeSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("ResourceSpecificationType", resourceSpecificationTypeSchema);
+module.exports = mongoose.model(
+  "ResourceSpecificationType",
+  resourceSpecificationTypeSchema
+);

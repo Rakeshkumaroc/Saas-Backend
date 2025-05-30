@@ -4,7 +4,7 @@ const rightSchema = new mongoose.Schema({
   rightName: {
     type: String,
     required: true,
-    index: true,
+
     trim: true,
   },
   canPrint: {

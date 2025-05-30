@@ -2,11 +2,6 @@
 const mongoose = require("mongoose");
 
 const orgTypeSchema = new mongoose.Schema({
-  orgTypeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    unique: true, // Primary Key
-    index: true,
-  },
   orgTypeName: {
     type: String,
     required: true,

@@ -1,16 +1,9 @@
 const mongoose = require("mongoose");
 
 const branchSchema = new mongoose.Schema({
-  branchId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    unique: true,
-    index: true,
-  },
   branchName: {
     type: String,
     required: true,
-    index: true,
   },
   address: {
     type: String,
@@ -47,7 +40,7 @@ const branchSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now,
-  }, 
+  },
 });
 
 module.exports = mongoose.model("branchCollection", branchSchema);
