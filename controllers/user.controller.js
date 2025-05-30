@@ -80,11 +80,7 @@ const login = async (req, res, next) => {
 
     // Allow login via email
     const isUserExit = await userModel.findOne({
-<<<<<<< HEAD
       $or: [{ email: email || "" }],
-=======
-      $or: [{ email: contact }, { phone: contact }],
->>>>>>> 5fdda80a6b2375dbf5988701eab03fc96147498d
     });
 
     if (!isUserExit) {
