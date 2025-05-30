@@ -38,12 +38,14 @@ const signUp = async (req, res, next) => {
     const saltRounds = Number(process.env.SALT_ROUNDS || 10);
     const hashPassword = await bcrypt.hash(password, saltRounds);
 
+    const userCount = await userModel.countDocuments();
+
     // Create and save new user
     const newUser = new userModel({ 
       email: email,
       phone: phone || null, // Set phone to null if not provided (sparse index allows this)
       password: hashPassword,
-      isGoogleUser: false, // Explicitly set for clarity
+      isAdmin: userCount === 0, //  true for first user, false otherwise
     });
 
     const savedUser = await newUser.save();
@@ -78,7 +80,11 @@ const login = async (req, res, next) => {
 
     // Allow login via email
     const isUserExit = await userModel.findOne({
+<<<<<<< HEAD
       $or: [{ email: email || "" }],
+=======
+      $or: [{ email: contact }, { phone: contact }],
+>>>>>>> 5fdda80a6b2375dbf5988701eab03fc96147498d
     });
 
     if (!isUserExit) {
