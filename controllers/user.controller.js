@@ -1,24 +1,26 @@
 const userModel = require("../models/user.model");
-const ApiError = require("../utils/ApiError");
-const ApiResponse = require("../utils/ApiResponse");
+const ApiError = require("../utils/apiError");
+const ApiResponse = require("../utils/apiResponse");
 const bcrypt = require("bcrypt");
+const { oauth2client } = require("../helpers/googleConfig");
+const { google } = require("googleapis");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 // ======================= SIGNUP =========================
 const signUp = async (req, res, next) => {
   try {
-    const { userName, email, phone, password } = req.body;
+    const {  email, phone, password } = req.body;
+    console.log("signUp request body", req.body);
 
-    // Validate input
-    if (!userName || !email || !phone || !password) {
-      return next(new ApiError("All fields are required", 400));
+    // Validate required fields
+    if ( !email || !password) {
+      return next(new ApiError("Email, and password are required", 400));
     }
 
     // Check if user already exists
-
     const isUserExits = await userModel.findOne({
-      $or: [{ email: email }, { phone: phone }],
+      $or: [{ email: email }, ...(phone ? [{ phone: phone }] : [])],
     });
 
     if (isUserExits) {
@@ -27,7 +29,7 @@ const signUp = async (req, res, next) => {
           isUserExits.email === email
             ? "Email already exists"
             : "Phone already exists",
-          400 // Use 400 for client errors
+          400
         )
       );
     }
@@ -37,18 +39,18 @@ const signUp = async (req, res, next) => {
     const hashPassword = await bcrypt.hash(password, saltRounds);
 
     // Create and save new user
-    const newUser = new userModel({
+    const newUser = new userModel({ 
       email: email,
-      phone: phone,
+      phone: phone || null, // Set phone to null if not provided (sparse index allows this)
       password: hashPassword,
+      isGoogleUser: false, // Explicitly set for clarity
     });
 
     const savedUser = await newUser.save();
 
     // Remove password from response
     const userResponse = {
-      _id: savedUser._id,
-      userName: savedUser.userName,
+      _id: savedUser._id, 
       email: savedUser.email,
       phone: savedUser.phone,
     };
@@ -68,15 +70,15 @@ const signUp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { contact, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!contact || !password) {
-      return next(new ApiError("Email/Phone and Password are required", 400));
+    if (!password || !email) {
+      return next(new ApiError("Password and either Email  are required", 400));
     }
 
-    // Allow login via email or phone
+    // Allow login via email
     const isUserExit = await userModel.findOne({
-      $or: [{ email:contact }, { phone:contact }],
+      $or: [{ email: email || "" }],
     });
 
     if (!isUserExit) {
@@ -92,7 +94,6 @@ const login = async (req, res, next) => {
       {
         userId: isUserExit._id,
         email: isUserExit.email,
-        phone: isUserExit.phone,
       },
       process.env.JWT_SECRET_KEY,
       { expiresIn: "1d" }
@@ -107,7 +108,8 @@ const login = async (req, res, next) => {
 
     const responseData = {
       id: isUserExit._id, 
-      username: isUserExit.userName, 
+      email: isUserExit.email,
+      phone: isUserExit.phone,
     };
 
     res
@@ -116,6 +118,137 @@ const login = async (req, res, next) => {
   } catch (error) {
     console.error(error); // Log error for debugging
     next(new ApiError(error.message || "Server error", 500));
+  }
+};
+
+// ======================= GOOGLE SIGNUP =========================
+const addUserWithGoogle = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return next(new ApiError("Authorization code is required", 400));
+    }
+
+    const { tokens } = await oauth2client.getToken(code);
+    oauth2client.setCredentials(tokens);
+
+    const oauth2 = google.oauth2({
+      auth: oauth2client,
+      version: "v2",
+    });
+
+    const userInfo = await oauth2.userinfo.get();
+    const { email, name, picture } = userInfo.data;
+
+    let user = await userModel.findOne({ email });
+
+    if (user) {
+      return next(
+        new ApiError("Email already exists, please log in", 400, {
+          alreadyExists: true,
+        })
+      );
+    }
+
+    user = new userModel({ 
+      email,
+      phone: "",
+      profilePic: picture,
+      isGoogleUser: true,
+      isGoogleVerified: true,
+    });
+
+    const savedUser = await user.save();
+
+    const token = jwt.sign(
+      { userId: savedUser._id, email: savedUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    const userResponse = {
+      id: savedUser._id, 
+      email: savedUser.email,
+      phone: savedUser.phone,
+      profilePic: savedUser.profilePic,
+    };
+
+    res.status(201).json(
+      new ApiResponse(201, "Google signup successful", {
+        crackItData: { token, user: userResponse },
+      })
+    );
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    next(new ApiError("Google authentication failed", 500));
+  }
+};
+
+// ======================= GOOGLE LOGIN =========================
+const logInUserWithGoogle = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return next(new ApiError("Authorization code missing", 400));
+    }
+
+    const { tokens } = await oauth2client.getToken(code);
+    oauth2client.setCredentials(tokens);
+
+    const oauth2 = google.oauth2({
+      auth: oauth2client,
+      version: "v2",
+    });
+
+    const { data } = await oauth2.userinfo.get();
+    const { email } = data;
+
+    const user = await userModel.findOne({
+      email,
+      isGoogleUser: true,
+    });
+
+    if (!user) {
+      return next(new ApiError("User not found. Please register first.", 404));
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    const userResponse = {
+      id: user._id, 
+      email: user.email,
+      phone: user.phone,
+      profilePic: user.profilePic,
+    };
+
+    res.status(200).json(
+      new ApiResponse(200, "Google login successful", {
+        crackItData: { token, user: userResponse },
+      })
+    );
+  } catch (error) {
+    console.error("Google Login Error:", error);
+    next(new ApiError("Google login failed", 500));
   }
 };
 
@@ -132,7 +265,9 @@ const logout = (req, res) => {
 // ======================= GET ALL USERS =========================
 const getAllUsers = async (req, res, next) => {
   try {
-    const users = await userModel.find({ isDeleted: false }).select("-password");
+    const users = await userModel
+      .find({ isDeleted: false })
+      .select("-password");
     res.status(200).json(new ApiResponse(200, "All users fetched", users));
   } catch (error) {
     next(error);
@@ -142,7 +277,9 @@ const getAllUsers = async (req, res, next) => {
 // ======================= GET USER BY ID =========================
 const getUserById = async (req, res, next) => {
   try {
-    const user = await userModel.findById(req.params.userId).select("-password");
+    const user = await userModel
+      .findById(req.params.userId)
+      .select("-password");
 
     if (!user || user.isDeleted) {
       return next(new ApiError("User not found", 404));
@@ -207,6 +344,8 @@ const deleteUser = async (req, res, next) => {
 module.exports = {
   signUp,
   login,
+  addUserWithGoogle,
+  logInUserWithGoogle,
   logout,
   getAllUsers,
   getUserById,

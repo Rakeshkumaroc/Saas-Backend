@@ -1,43 +1,19 @@
+
+// models/OrgUserMapping.js
 const mongoose = require("mongoose");
 
-const OrgUserMappingSchema = new mongoose.Schema(
-  {
-    orgId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-    //   ref: "Organization",
-     
-    },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-    //   ref: "User",
-   
-    },
-    isPrimaryContact: {
-      type: Boolean,
-      default: false,
-    },
-    validFrom: {
-      type: Date,
-       default: Date.now,
-    },
-    validTo: {
-      type: Date,
-     default:null
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  {
-    timestamps: true, // Adds createdAt and updatedAt
-  }
-);
+const orgUserMappingSchema = new mongoose.Schema({
+  MappingID: { type: String, required: true, unique: true }, // Custom ID, e.g., MAP-USER-001
+  OrgID: { type: String, required: true, index: true },
+  UserID: { type: String, required: true, index: true },
+  BranchID: { type: String, index: true }, // Optional
+  IsPrimaryContact: { type: Boolean, default: true },
+  ValidFrom: { type: Date, required: true, index: true },
+  ValidTo: { type: Date, required: true, index: true },
+  IsActive: { type: Boolean, default: true },
+  IsDeleted: { type: Boolean, default: false },
+  CreatedAt: { type: Date, default: Date.now },
+  UpdatedAt: { type: Date, default: Date.now },
+});
 
-module.exports = mongoose.model("OrgUserMapping", OrgUserMappingSchema);
+module.exports = mongoose.model("OrgUserMapping", orgUserMappingSchema);
