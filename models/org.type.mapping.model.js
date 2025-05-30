@@ -1,19 +1,23 @@
-// models/OrganizationType.js
 const mongoose = require("mongoose");
 
-const orgTypeSchema = new mongoose.Schema({
-  orgTypeId: {
+const orgTypeMappingSchema = new mongoose.Schema({
+  orgId: {
     type: mongoose.Schema.Types.ObjectId,
-    unique: true, // Primary Key
-    index: true,
-  },
-  orgTypeName: {
-    type: String,
     required: true,
   },
-  description: {
-    type: String,
-    default: "",
+  orgTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  validFrom: {
+    type: Date,
+    // required: true,
+    default: Date.now,
+  },
+  validTo: {
+    type: Date,
+    // required: true,
+    default: null,
   },
   isActive: {
     type: Boolean,
@@ -33,4 +37,4 @@ const orgTypeSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("orgTypeCollection", orgTypeSchema);
+module.exports = mongoose.model("orgTypeMapping", orgTypeMappingSchema);

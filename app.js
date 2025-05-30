@@ -14,6 +14,9 @@ const standardSettingRoutes = require("./routes/standard.setting.routes");
 const resourceRoutes = require("./routes/resource.routes");
 const resourceTypeRoutes = require("./routes/resource.type.routes");
 const resourceSpecTypeRoutes = require("./routes/resource.specification.type.routes");
+const orgTypeMappingRoutes = require("./routes/org.type.mapping.routes");
+
+
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -46,7 +49,7 @@ app.use("/api/v1/standard-settings", standardSettingRoutes);
 app.use("/api/v1/resources", resourceRoutes);
 app.use("/api/v1/resource-types", resourceTypeRoutes);
 app.use("/api/v1/resource-spec-types", resourceSpecTypeRoutes);
-
+app.use("/api/v1/org-type-mappings", orgTypeMappingRoutes);
 
 
 // 6️ Global error handler (should be last)

@@ -1,14 +1,23 @@
 const OrgModel = require("../models/org.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-
-
+const OrgTypeMapping = require("../models/org.type.mapping.model");
+const OrgUserMapping = require("../models/org.user.mapping.model");
 // Create new OrgModel
 const createOrg = async (req, res, next) => {
   try {
-    const { orgName, email, phone } = req.body;
+    const {
+      orgName,
+      email,
+      phone,
+      orgTypeId,
+      userId,
+      orgLogo,
+      branchCount,
+      isMultiBranch,
+    } = req.body;
 
-    if (!orgName || !email || !phone) {
+    if (!orgName || !email || !phone || !orgTypeId || !userId) {
       return next(new ApiError("All fields are required", 400));
     }
 
@@ -32,12 +41,32 @@ const createOrg = async (req, res, next) => {
       orgName,
       email,
       phone,
+      orgLogo,
+      branchCount,
+      isMultiBranch,
     });
 
-    const saved = await newOrg.save();
-    return res
-      .status(201)
-      .json(new ApiResponse(201, "Organization created successfully", saved));
+    const savedOrg = await newOrg.save();
+
+    const orgTypeMapping = new OrgTypeMapping({
+      orgId: savedOrg._id,
+      orgTypeId,
+    });
+    const savedOrgAndOrgTypeMapping = await orgTypeMapping.save();
+
+    // here create method are used don't need to save
+    const orgUserMapping = await OrgUserMapping.create({
+      orgId: savedOrg._id,
+      userId,
+    });
+
+    return res.status(201).json(
+      new ApiResponse(201, "Organization and mapping created successfully", {
+        organization: savedOrg,
+        orgTypeMapping: savedOrgAndOrgTypeMapping,
+        orgUserMapping: orgUserMapping,
+      })
+    );
   } catch (err) {
     next(err);
   }
